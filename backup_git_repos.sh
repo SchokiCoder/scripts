@@ -13,5 +13,5 @@ for ITEM in $REPOS; do
 	cd ..
 done
 
-tar -cJf "git_backups_$(date -I).tar.xz" $REPOS
+tar -czf "git_backups_$(date -I).tar.gz" $REPOS
 

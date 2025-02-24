@@ -6,9 +6,9 @@
 URL="https://github.com/SchokiCoder"
 
 # A list of repositories to be found under the URL.
-REPOS="2d 5th_2d 5th_schoki_game 5th_schoki_gui 5th_schoki_misc "`
-	`"c2_2d c_50_years_old_foundation "`
-	`"experiments flathub gohui hui hawps ms_office_macros "`
+REPOS="5th_2d 5th_schoki_game 5th_schoki_gui 5th_schoki_misc "`
+	`"c2_generic2d c_50_years_old_foundation "`
+	`"experiments flathub generic2d gohui hui hawps ms_office_macros "`
 	`"onewaypass rshui remote_control scripts smng sonne "`
 	`"troll_erp twilights_program python_tutorial"
 

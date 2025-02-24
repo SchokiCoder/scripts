@@ -1,23 +1,64 @@
-#!/bin/sh
+#!/usr/bin/sh
 
-URL="https://github.com/SchokiCoder/"
+# === Config ===
 
-# empty backticks ` evaluate to nothing... yeah
+# The URL of all repositories.
+URL="https://github.com/SchokiCoder"
+
+# A list of repositories to be found under the URL.
 REPOS="2d 5th_2d 5th_schoki_game 5th_schoki_gui 5th_schoki_misc "`
 	`"c2_2d c_50_years_old_foundation "`
 	`"experiments flathub gohui hui hawps ms_office_macros "`
 	`"onewaypass rshui remote_control scripts smng sonne "`
 	`"troll_erp twilights_program python_tutorial"
 
+REPO_DEST="$HOME/git_backups"
+
+# Uncomment to have a tar.gz of all repos copied to the destination,
+# after the updates.
+#TAR_DEST="$REPO_DEST"
+
+# Config ends here. Stop editing.
+
+
+
+
+
+# === Script ===
+
+# log
+DT=$(date +%Y-%m-%d_%H-%M)
+echo "=== git clones/pulls at $DT ==="
+
+# get / update repos
 for ITEM in $REPOS; do
-	if [ ! -d "$ITEM" ]; then
-		git clone "$URL$ITEM"
+	if [ ! -d "$REPO_DEST/$ITEM" ]; then
+		git clone "$URL/$ITEM" "$REPO_DEST/$ITEM"
 	fi
 
-	cd "$ITEM" || exit
+	echo "Pulling into '$REPO_DEST/$ITEM'..."
+	PREV=$(pwd)
+	if ! cd "$REPO_DEST/$ITEM"; then
+		echo "cd err, exiting"
+		exit
+	fi
 	git pull
-	cd ..
+	if ! cd "$PREV"; then
+		echo "cd err, exiting"
+		exit
+	fi
 done
 
-tar -czf "git_backups_$(date -I).tar.gz" $REPOS
+# log
+echo "Repos updated"
 
+# make a tar
+if [ ! "$TAR_DEST" = "" ]; then
+	echo "Creating archive"
+	TAR_NAME="git_backups_$DT.tar.gz"
+	tar -C "$REPO_DEST" -czf "$REPO_DEST/repos.tar.gz" $REPOS #intentionally non quoted var
+	mv "$REPO_DEST/repos.tar.gz" "$TAR_DEST/$TAR_NAME"
+fi
+
+# log
+echo "=== All done ==="

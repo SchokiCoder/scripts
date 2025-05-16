@@ -9,7 +9,7 @@ URL="https://github.com/schokicoder"
 REPOS="5th_2d 5th_schoki_game 5th_schoki_gui 5th_schoki_misc "`
 	`"c2_generic2d c_50_years_old_foundation "`
 	`"experiments flathub generic2d gohui hui hawps ms_office_macros "`
-	`"rshui remote_control scripts smng sonne "`
+	`"rshui remote_control scripts smng sonne strategy_game "`
 	`"troll_erp twilights_program python_tutorial"
 
 REPO_DEST="$HOME/git_backups"

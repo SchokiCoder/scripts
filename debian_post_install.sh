@@ -3,15 +3,17 @@
 # SPDX-License-Identifier: MIT, or BSD-3-Clause, or MPL-2.0, or I-don't-care
 # Whatever suits your mood, but no warranties
 
-set -eux
+set -eu
 
 
 # this function was made 100% by ChatGippity,
 # because I want to get this done and get to more productive things already
+COMPONENTS_BACKUP_FILE=
+
 enable_debian_component()
 {
 	COMPONENT="$1"
-	SOURCES_FILE="/etc/apt/sources.list.d/debian.sources"
+	SOURCES_FILE="/etc/apt/sources.list"
 	BACKUP_FILE="${SOURCES_FILE}.bak.$$"
 
 	case "$COMPONENT" in
@@ -28,18 +30,28 @@ enable_debian_component()
 		return 1
 	fi
 
-	if ! grep -q '^Components:' "$SOURCES_FILE" ; then
-		echo "No Components fields found in $SOURCES_FILE" >&2
+	if ! grep -Eq '^[[:space:]]*deb(-src)?[[:space:]]' "$SOURCES_FILE" ; then
+		echo "No active repository entries found in $SOURCES_FILE" >&2
 		return 1
 	fi
 
-	if [ ! -e "$BACKUP_FILE" ] ; then
-		sudo cp -a "$SOURCES_FILE" "$BACKUP_FILE"
+	if [ -z "$COMPONENTS_BACKUP_FILE" ] ; then
+		TIMESTAMP=$(date '+%Y-%m-%d_%H-%M-%S') || return 1
+		BACKUP_FILE="${SOURCES_FILE}.bak.${TIMESTAMP}"
+		COUNTER=1
+
+		while [ -e "$BACKUP_FILE" ] ; do
+			BACKUP_FILE="${SOURCES_FILE}.bak.${TIMESTAMP}.${COUNTER}"
+			COUNTER=$((COUNTER + 1))
+		done
+
+		sudo cp -a "$SOURCES_FILE" "$BACKUP_FILE" || return 1
+		COMPONENTS_BACKUP_FILE="$BACKUP_FILE"
 	fi
 
-	# add the component to every Components field, if missing
-	sudo sed -i -E "/^Components:/ {
-		/(^|[[:space:]])${COMPONENT}([[:space:]]|$)/! s/$/ ${COMPONENT}/
+	# Add the component to every active repository entry, if missing.
+	sudo sed -i -E "/^[[:space:]]*deb(-src)?[[:space:]]/ {
+		/(^|[[:space:]])${COMPONENT}([[:space:]]|$)/! s/[[:space:]]*(#.*)?$/ ${COMPONENT}\\1/
 	}" "$SOURCES_FILE"
 }
 
@@ -52,7 +64,8 @@ echo ""
 
 echo "Do you want to continue? (y/n)"
 read -r USER_CONTINUE
-if [ ! "$USER_CONTINUE" = "y" ] && [ ! "$USER_CONTINUE" = "Y" ] ; then
+if [ ! "$USER_CONTINUE" = "y" ] &&
+   [ ! "$USER_CONTINUE" = "Y" ] ; then
 	exit
 fi
 
@@ -108,8 +121,14 @@ fi
 
 echo "> Adding Flathub"
 
-sudo flatpak remote-add --system --if-not-exists flathub \
-	https://dl.flathub.org/repo/flathub.flatpakrepo
+if flatpak remotes --system --columns=name |
+   grep -Fxq flathub ; then
+	echo "Flathub repo already added system wide."
+	echo "Moving on."
+else
+	flatpak remote-add --user --if-not-exists flathub \
+		https://dl.flathub.org/repo/flathub.flatpakrepo
+fi
 
 echo "> Adding Flatpak support to your graphical installer (if it exists)"
 
@@ -127,7 +146,8 @@ echo "> It's time to start the Questioning"
 echo "Do you want to install development tools and docs? (y/n)"
 echo "If not sure, type \"n\" for no."
 read -r USER_DEVELOPER
-if [ "$USER_DEVELOPER" = "y" ] || [ "$USER_DEVELOPER" = "Y" ] ; then
+if [ "$USER_DEVELOPER" = "y" ] ||
+   [ "$USER_DEVELOPER" = "Y" ] ; then
 	sudo apt install -y \
 		build-essential \
 		gdb \
@@ -139,7 +159,8 @@ fi
 echo "Do you want to install the proprietary Steam launcher? (y/n)"
 echo "If not sure, type \"n\" for no."
 read -r USER_STEAM
-if [ "$USER_STEAM" = "y" ] || [ "$USER_STEAM" = "Y" ] ; then
+if [ "$USER_STEAM" = "y" ] ||
+   [ "$USER_STEAM" = "Y" ] ; then
 	enable_debian_component contrib
 	sudo dpkg --add-architecture i386
 	sudo apt update
@@ -149,7 +170,8 @@ fi
 echo "Do you want the proprietary nVidia graphics card driver? (y/n)"
 echo "If not sure, type \"n\" for no."
 read -r USER_GPU_NVIDIA
-if [ "$USER_GPU_NVIDIA" = "y" ] || [ "$USER_GPU_NVIDIA" = "Y" ] ; then
+if [ "$USER_GPU_NVIDIA" = "y" ] ||
+   [ "$USER_GPU_NVIDIA" = "Y" ] ; then
 	enable_debian_component non-free
 	sudo apt update
 	sudo apt install -y nvidia-driver

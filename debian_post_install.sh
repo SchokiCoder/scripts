@@ -156,6 +156,19 @@ if [ "$USER_DEVELOPER" = "y" ] ||
 		manpages-dev
 fi
 
+echo "Do you want to install multimedia codecs and VLC? (y/n)"
+echo "If not sure, type \"y\" for yes."
+read -r USER_MULTIMEDIA
+if [ "$USER_MULTIMEDIA" = "y" ] ||
+   [ "$USER_MULTIMEDIA" = "Y" ] ; then
+	enable_debian_component contrib
+	sudo apt install \
+		libavcodec-extra \
+		libdvd-pkg \
+		vlc
+	sudo dpkg-reconfigure libdvd-pkg
+fi
+
 echo "Do you want to install the proprietary Steam launcher? (y/n)"
 echo "If not sure, type \"n\" for no."
 read -r USER_STEAM

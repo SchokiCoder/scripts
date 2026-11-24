@@ -5,11 +5,17 @@
 
 set -eu
 
+COMPONENTS_BACKUP_FILE=
+
+
+is_deb_installed()
+{
+	dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null |
+		grep -q '^installed$'
+}
 
 # this function was made 100% by ChatGippity,
 # because I want to get this done and get to more productive things already
-COMPONENTS_BACKUP_FILE=
-
 enable_debian_component()
 {
 	COMPONENT="$1"
@@ -55,6 +61,25 @@ enable_debian_component()
 	}" "$SOURCES_FILE"
 }
 
+question()
+{
+	QUESTION_ANSWER=
+
+	while [ "$QUESTION_ANSWER" = "" ] ; do
+		echo "$1 (y/n)"
+		echo "If not sure, type \"n\" for no."
+		read -r QUESTION_ANSWER
+	done
+
+	[ "$QUESTION_ANSWER" = "y" ] ||
+	[ "$QUESTION_ANSWER" = "Y" ] ||
+	[ "$QUESTION_ANSWER" = "yes" ] ||
+	[ "$QUESTION_ANSWER" = "Yes" ] ||
+	[ "$QUESTION_ANSWER" = "heck yes" ] ||
+	[ "$QUESTION_ANSWER" = "oh yeah boi" ] ||
+	[ "$QUESTION_ANSWER" = "sign me up" ]
+}
+
 
 echo "DISCLAIMER:"
 echo "This script installs packages, and sets up a system to my taste."
@@ -62,10 +87,9 @@ echo "It is made for Debian. You may not want to use it elsewhere."
 echo "There are no guarantees or warranties either way."
 echo ""
 
-echo "Do you want to continue? (y/n)"
-read -r USER_CONTINUE
-if [ ! "$USER_CONTINUE" = "y" ] &&
-   [ ! "$USER_CONTINUE" = "Y" ] ; then
+
+
+if ! question "Do you want to continue?" ; then
 	exit
 fi
 
@@ -99,7 +123,12 @@ sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw --force enable
 
-echo "> Adding user local binaries to PATH"
+echo "> Adding binary paths to PATH"
+
+cat <<'EOF' | sudo tee /etc/profile.d/schoki_debian.sh >/dev/null
+# add sbin dirs to PATH
+export PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
+EOF
 
 PROFILE_FILE="$HOME/.bash_profile"
 if [ ! -f "$PROFILE_FILE" ] ; then
@@ -143,11 +172,7 @@ fi
 
 echo "> It's time to start the Questioning"
 
-echo "Do you want to install development tools and docs? (y/n)"
-echo "If not sure, type \"n\" for no."
-read -r USER_DEVELOPER
-if [ "$USER_DEVELOPER" = "y" ] ||
-   [ "$USER_DEVELOPER" = "Y" ] ; then
+if question "Do you want to install development tools and docs?" ; then
 	sudo apt install -y \
 		build-essential \
 		gdb \
@@ -156,11 +181,7 @@ if [ "$USER_DEVELOPER" = "y" ] ||
 		manpages-dev
 fi
 
-echo "Do you want to install multimedia codecs and VLC? (y/n)"
-echo "If not sure, type \"y\" for yes."
-read -r USER_MULTIMEDIA
-if [ "$USER_MULTIMEDIA" = "y" ] ||
-   [ "$USER_MULTIMEDIA" = "Y" ] ; then
+if question "Do you want to install multimedia codecs and VLC?" ; then
 	enable_debian_component contrib
 	sudo apt install \
 		libavcodec-extra \
@@ -169,25 +190,29 @@ if [ "$USER_MULTIMEDIA" = "y" ] ||
 	sudo dpkg-reconfigure libdvd-pkg
 fi
 
-echo "Do you want to install the proprietary Steam launcher? (y/n)"
-echo "If not sure, type \"n\" for no."
-read -r USER_STEAM
-if [ "$USER_STEAM" = "y" ] ||
-   [ "$USER_STEAM" = "Y" ] ; then
+if question "Do you want to install the proprietary Steam launcher?" ; then
 	enable_debian_component contrib
 	sudo dpkg --add-architecture i386
 	sudo apt update
 	sudo apt install -y steam-installer
 fi
 
-echo "Do you want the proprietary nVidia graphics card driver? (y/n)"
-echo "If not sure, type \"n\" for no."
-read -r USER_GPU_NVIDIA
-if [ "$USER_GPU_NVIDIA" = "y" ] ||
-   [ "$USER_GPU_NVIDIA" = "Y" ] ; then
+if question "Do you want the proprietary nVidia graphics card driver?" ; then
 	enable_debian_component non-free
 	sudo apt update
 	sudo apt install -y nvidia-driver
+fi
+
+if question "Do you want to debloat?" ; then
+	if is_deb_installed xfce4-terminal ||
+	   is_deb_installed konsole ||
+	   is_deb_installed gnome-terminal; then
+		sudo apt purge -y xterm
+	fi
+fi
+
+if question "Do you want to remove default Firefox ESR?" ; then
+	sudo apt purge -y firefox-esr
 fi
 
 echo "> WE'RE DONE HERE. Press Enter to exit."

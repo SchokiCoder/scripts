@@ -59,6 +59,8 @@ enable_debian_component()
 	sudo sed -i -E "/^[[:space:]]*deb(-src)?[[:space:]]/ {
 		/(^|[[:space:]])${COMPONENT}([[:space:]]|$)/! s/[[:space:]]*(#.*)?$/ ${COMPONENT}\\1/
 	}" "$SOURCES_FILE"
+
+	sudo apt update
 }
 
 question()
@@ -207,7 +209,11 @@ if question "Do you want to debloat?" ; then
 	if is_deb_installed xfce4-terminal ||
 	   is_deb_installed konsole ||
 	   is_deb_installed gnome-terminal; then
-		sudo apt purge -y xterm
+		sudo apt purge -y \
+			epiphany-browser \
+			konqueror \
+			xiterm+thai \
+			xterm
 	fi
 fi
 

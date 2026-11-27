@@ -103,17 +103,18 @@ sudo apt upgrade -y
 echo "> Installing base tools"
 
 sudo apt install -y \
-	ufw \
 	apparmor \
 	apparmor-utils \
+	curl \
 	flatpak \
 	fwupd \
-	curl \
 	htop \
+	lm-sensors \
 	lsof \
 	pciutils \
-	usbutils \
-	lm-sensors
+	systemd-timesyncd \
+	ufw \
+	usbutils
 
 if ! sudo aa-status ; then
 	echo "WARNING: AppArmor is not active or functioning correctly."
